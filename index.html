@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  黄同学的工作台                                               ║
+  ║  由 不一书个人工作台生成器 (bys-personal-dashboard) 生成       ║
+  ╠══════════════════════════════════════════════════════════════╣
+  ║  改这个文件时请遵守：                                          ║
+  ║  1. 每个功能必须被分区标记包裹，且 START 和 END 的功能名        ║
+  ║     必须一字不差（HTML 和 JS 两处都要）                        ║
+  ║  2. 数据读写只走 Store.*，不要直接碰 localStorage             ║
+  ║  3. 输入框 font-size 不能小于 16px                            ║
+  ║  4. 敏感数据（API key）走 Store.setSecret，不进备份            ║
+  ╚══════════════════════════════════════════════════════════════╝
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>黄同学的工作台</title>
+
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="黄同学">
+<meta name="theme-color" content="#161b22">
+
+<style>
+/* ==== 主题变量（科技蓝调 · 第 3 版选定） ==== */
+:root{
+  --bg:#0f1419;
+  --sidebar:#161b22;
+  --sidebar-text:#8b949e;
+  --sidebar-active:#1f6feb;
+  --card:#161b22;
+  --text:#e6edf3;
+  --text-dim:#7d8590;
+  --accent:#1f6feb;
+  --radius:10px;
+  --shadow:0 0 0 1px rgba(255,255,255,.06);
+  --font:-apple-system,"PingFang SC",system-ui,sans-serif;
+  --line:#2a323d;
+
+  --fs-hero:40px;
+  --fs-title:22px;
+  --fs-body:16px;
+  --fs-meta:13px;
+
+  --pad:18px;
+  --gap:12px;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --ease:cubic-bezier(.4,0,.2,1);
+  --dur:.18s;
+}
+
+/* ==== 基础 ==== */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:var(--font); background:var(--bg); color:var(--text);
+  font-size:var(--fs-body); line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+.app{display:flex;height:100%}
+
+/* ==== 侧边栏 ==== */
+.side{
+  width:76px;flex-shrink:0;background:var(--sidebar);
+  display:flex;flex-direction:column;
+  padding:calc(12px + env(safe-area-inset-top,0)) 6px calc(12px + env(safe-area-inset-bottom,0));
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+.side::-webkit-scrollbar{display:none}
+.brand{text-align:center;margin-bottom:14px;flex-shrink:0}
+.brand .logo{font-size:26px;line-height:1}
+.brand .name{font-size:11px;color:var(--sidebar-text);opacity:.85;margin-top:4px;line-height:1.3;word-break:break-all}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav button{
+  border:none;background:transparent;font-family:inherit;
+  padding:9px 2px;border-radius:10px;
+  color:var(--sidebar-text);font-size:11px;line-height:1.3;
+}
+.nav button .ico{display:block;font-size:20px;margin-bottom:3px}
+.nav button.on{background:var(--sidebar-active);color:#fff}
+
+/* ==== 内容区 ==== */
+.main{
+  flex:1;min-width:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:calc(14px + env(safe-area-inset-top,0)) 12px calc(28px + env(safe-area-inset-bottom,0));
+  scroll-behavior:smooth;
+}
+.page{display:none;flex-direction:column;gap:var(--gap)}
+.page.on{display:flex}
+.page-title{font-size:var(--fs-title);font-weight:500;line-height:1.25;letter-spacing:-.01em;margin-bottom:2px}
+.page-sub{font-size:var(--fs-meta);color:var(--text-dim);margin-top:-6px;margin-bottom:2px}
+
+/* ==== 卡片 ==== */
+.card{
+  background:var(--card);border-radius:var(--radius);
+  border:1px solid var(--line);
+  box-shadow:var(--shadow);padding:var(--pad);
+}
+.card h2{font-size:17px;font-weight:500;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.hint{font-size:var(--fs-meta);color:var(--text-dim);margin-top:8px;line-height:1.6}
+.empty{font-size:var(--fs-meta);color:var(--text-dim);text-align:center;padding:22px 0}
+
+.hero{font-size:var(--fs-hero);font-weight:500;line-height:1.1;letter-spacing:-.01em}
+.num,.hero{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.unit{font-size:var(--fs-meta);color:var(--text-dim);font-weight:400;margin-left:5px}
+
+/* ==== 表单 ==== */
+input,textarea,select{
+  transition:border-color var(--dur) var(--ease);
+  width:100%;font-size:var(--fs-body);font-family:inherit;color:var(--text);line-height:1.5;
+  padding:11px 13px;border:1px solid rgba(128,128,128,.28);
+  border-radius:calc(var(--radius) - 6px);background:transparent;
+}
+textarea{min-height:88px;resize:vertical;line-height:1.6}
+input::placeholder,textarea::placeholder{color:var(--text-dim)}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
+.btn{
+  padding:11px 18px;font-size:15px;font-family:inherit;white-space:nowrap;
+  border:none;border-radius:calc(var(--radius) - 6px);
+  background:var(--accent);color:#fff;
+}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid rgba(128,128,128,.3)}
+.btn.danger{background:#d9534f;color:#fff}
+.btn:active{opacity:.75}
+.row{display:flex;gap:8px;align-items:center}
+.row .btn{flex-shrink:0}
+
+/* ==== 列表 ==== */
+.item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px dashed rgba(128,128,128,.22)}
+.item:last-child{border-bottom:none}
+.item .grow{flex:1;min-width:0;line-height:1.6}
+.item .del{color:var(--text-dim);font-size:16px;background:none;border:none;padding:0 4px;flex-shrink:0}
+.box{
+  width:21px;height:21px;flex-shrink:0;margin-top:1px;
+  border:2px solid var(--accent);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;color:#fff;background:transparent;
+}
+.item.done .box{background:var(--accent)}
+.item.done .grow{text-decoration:line-through;color:var(--text-dim)}
+
+/* ==== 提示条 ==== */
+.banner{
+  background:var(--accent);color:#fff;padding:11px 14px;
+  border-radius:var(--radius);font-size:13px;line-height:1.5;
+  display:flex;align-items:center;gap:10px;
+}
+.banner button{
+  margin-left:auto;flex-shrink:0;background:rgba(255,255,255,.22);color:#fff;
+  border:none;padding:6px 12px;border-radius:8px;font-size:13px;font-family:inherit;
+}
+.toast{
+  position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0));
+  transform:translateX(-50%) translateY(8px);z-index:99;
+  background:rgba(0,0,0,.82);color:#fff;padding:10px 18px;border-radius:20px;
+  font-size:14px;opacity:0;pointer-events:none;
+  transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease);
+}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ════════ 动画 ════════ */
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.page.on > *{animation:rise .26s var(--ease) both}
+.page.on > *:nth-child(1){animation-delay:0s}
+.page.on > *:nth-child(2){animation-delay:.03s}
+.page.on > *:nth-child(3){animation-delay:.06s}
+.page.on > *:nth-child(4){animation-delay:.09s}
+.page.on > *:nth-child(n+5){animation-delay:.12s}
+.nav button,.btn,.card,.item .box{transition:all var(--dur) var(--ease)}
+.btn:active{opacity:.75;transform:scale(.98)}
+.item .box{transform:scale(1)}
+.item.done .box{animation:pop .22s var(--ease)}
+@keyframes pop{0%{transform:scale(1)}45%{transform:scale(1.18)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-delay:0s !important;
+    transition-duration:.01ms !important;scroll-behavior:auto !important}
+}
+
+/* ════════ 扩展样式（功能区共用） ════════ */
+.tag{display:inline-block;font-size:11px;padding:0 7px;border-radius:9px;border:1px solid var(--line);color:var(--text-dim);margin-right:6px;vertical-align:1px}
+.tag.acc{border-color:var(--accent);color:var(--accent)}
+.tag.red{border-color:#f47067;color:#f47067}
+.tag.green{border-color:#57ab5a;color:#57ab5a}
+.pbar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:8px 0 4px}
+.pbar i{display:block;height:100%;background:var(--accent);transition:width .25s}
+.mini{font-size:13px;padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--text);font-family:inherit;min-height:36px;cursor:pointer}
+.mini:active{opacity:.7}
+.mini.solid{background:var(--accent);color:#fff;border-color:var(--accent)}
+/* 天气 */
+.w-now{display:flex;align-items:center;gap:14px}
+.w-now svg{width:44px;height:44px}
+.w-now .t{font-size:34px;font-weight:500;line-height:1}
+.w-days{display:flex;gap:12px;overflow-x:auto;margin-top:12px}
+.w-day{min-width:52px;text-align:center;font-size:11px;color:var(--text-dim)}
+.w-day svg{width:20px;height:20px;margin:3px 0}
+/* 单词行 / 考点行 */
+.w-row{padding:10px 0;border-bottom:1px dashed rgba(128,128,128,.22)}
+.w-row:last-child{border-bottom:none}
+.w-word{font-size:18px;font-weight:500}
+.w-phon{color:var(--text-dim);font-size:12px;margin-left:8px}
+.w-mean{font-size:13px;color:var(--text-dim);margin:2px 0 8px}
+.w-acts{display:flex;gap:8px}
+.w-acts .mini{flex:1}
+.w-row.k .w-word{color:#57ab5a}
+.w-row.u .w-word{color:#f47067}
+
+/* ════════ 平板与横屏 ════════ */
+@media (min-width:700px){
+  :root{--fs-hero:48px;--fs-title:26px;--pad:24px;--gap:16px}
+  .side{width:200px;padding-left:12px;padding-right:12px}
+  .brand{text-align:left;padding:0 8px;margin-bottom:22px}
+  .brand .logo{font-size:30px}
+  .brand .name{font-size:14px;margin-top:6px;word-break:normal}
+  .nav{gap:2px}
+  .nav button{
+    display:flex;align-items:center;gap:12px;text-align:left;
+    padding:12px 14px;font-size:15px;
+  }
+  .nav button .ico{display:inline;font-size:20px;margin:0;width:24px;text-align:center}
+  .main{padding:28px 32px 40px}
+}
+
+/* ════════ 桌面：卡片并排 ════════ */
+@media (min-width:1100px){
+  :root{--fs-hero:56px;--fs-title:30px;--pad:30px;--gap:20px}
+  .side{width:240px}
+  .main{padding:36px 44px 52px}
+  .page.on{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:var(--gap);align-content:start;
+  }
+  .page.on > .page-title,
+  .page.on > .page-sub,
+  .page.on > .banner,
+  .page.on > .card.wide{grid-column:1 / -1}
+}
+@media (min-width:1700px){
+  .main > .page.on{max-width:1400px;margin:0 auto}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ==== 侧边栏 START ==== -->
+  <aside class="side">
+    <div class="brand">
+      <div class="logo">🌾</div>
+      <div class="name">黄同学的工作台</div>
+    </div>
+    <nav class="nav" id="nav">
+      <!-- 由 App.routes 自动渲染 -->
+    </nav>
+  </aside>
+  <!-- ==== 侧边栏 END ==== -->
+
+  <main class="main" id="main">
+
+    <!-- ==== 功能：今日 START ==== -->
+    <section class="page" id="page-today">
+      <div class="page-title" id="todayGreet">今日</div>
+      <div class="page-sub" id="todayDate"></div>
+      <div class="card wide">
+        <h2>✅ 今天要处理</h2>
+        <div id="todayList"></div>
+      </div>
+      <div class="card">
+        <h2>🌤️ 天气</h2>
+        <div id="weatherBox"><div class="empty">加载中…</div></div>
+        <div class="row" style="margin-top:10px">
+          <input type="text" id="cityInput" placeholder="切换城市，如：周口">
+          <button class="btn ghost" onclick="Today.setCity()">更新</button>
+        </div>
+        <p class="hint">施肥打药前看一眼天气</p>
+      </div>
+    </section>
+    <!-- ==== 功能：今日 END ==== -->
+
+    <!-- ==== 功能：项目 START ==== -->
+    <section class="page" id="page-project">
+      <div class="page-title">项目进度</div>
+      <div class="page-sub">每个地块 / 每个项目干到哪一步，一眼看清</div>
+      <div class="card wide">
+        <div id="projectList"></div>
+      </div>
+      <div class="card">
+        <h2>➕ 新建项目 / 地块</h2>
+        <div class="row">
+          <input type="text" id="projName" placeholder="名称，如：3 号地 · 花生">
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input type="text" id="projStage" placeholder="当前阶段，如：苗期管理">
+          <button class="btn" onclick="Project.add()">添加</button>
+        </div>
+      </div>
+    </section>
+    <!-- ==== 功能：项目 END ==== -->
+
+    <!-- ==== 功能：问题 START ==== -->
+    <section class="page" id="page-issue">
+      <div class="page-title">问题处理</div>
+      <div class="page-sub">田间发现的问题随手记，别让它过夜</div>
+      <div class="card">
+        <div class="row">
+          <input type="text" id="issueText" placeholder="比如：2 号地发现蚜虫">
+          <button class="btn" onclick="Issue.add()">记录</button>
+        </div>
+      </div>
+      <div class="card wide">
+        <div id="issueList"></div>
+      </div>
+    </section>
+    <!-- ==== 功能：问题 END ==== -->
+
+    <!-- ==== 功能：农事 START ==== -->
+    <section class="page" id="page-farm">
+      <div class="page-title">农事记录</div>
+      <div class="page-sub">哪天、哪块地、干了什么，随手一条</div>
+      <div class="card">
+        <h2>➕ 记一笔</h2>
+        <div class="row">
+          <input type="date" id="farmDate">
+          <input type="text" id="farmPlot" placeholder="地块，如：2 号地">
+        </div>
+        <div class="row" style="margin-top:8px">
+          <select id="farmType">
+            <option>种植</option><option>施肥</option><option>施药</option>
+            <option>灌溉</option><option>农机作业</option><option>采收</option><option>其他</option>
+          </select>
+          <input type="text" id="farmAmount" placeholder="用量，如：尿素 25kg/亩">
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input type="text" id="farmNote" placeholder="备注（可选）">
+          <button class="btn" onclick="Farm.add()">记下</button>
+        </div>
+      </div>
+      <div class="card wide">
+        <h2>🧺 最近记录</h2>
+        <div id="farmList"></div>
+      </div>
+    </section>
+    <!-- ==== 功能：农事 END ==== -->
+
+    <!-- ==== 功能：记账 START ==== -->
+    <section class="page" id="page-money">
+      <div class="page-title">采购记账</div>
+      <div class="page-sub">农资采购和日常收支，支出红、收入绿</div>
+      <div class="card wide">
+        <div id="moneySummary"></div>
+      </div>
+      <div class="card">
+        <h2>➕ 记一笔</h2>
+        <div class="row">
+          <button class="mini" id="moneyOut" style="flex:1" onclick="Money.setType('out')">支出</button>
+          <button class="mini" id="moneyIn" style="flex:1" onclick="Money.setType('in')">收入</button>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input type="number" inputmode="decimal" id="moneyAmount" placeholder="金额 ¥">
+          <select id="moneyCat"></select>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input type="date" id="moneyDate">
+          <input type="text" id="moneyNote" placeholder="备注，如：复合肥 2 袋">
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" style="flex:1" onclick="Money.add()">记一笔</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>📊 本月支出分类</h2>
+        <div id="moneyChart"></div>
+      </div>
+      <div class="card wide">
+        <h2>🧾 最近记录 <button class="mini" style="margin-left:auto" onclick="Money.exportCSV()">导出 CSV</button></h2>
+        <div id="moneyList"></div>
+      </div>
+    </section>
+    <!-- ==== 功能：记账 END ==== -->
+
+    <!-- ==== 功能：学习 START ==== -->
+    <section class="page" id="page-study">
+      <div class="page-title">学习</div>
+      <div class="page-sub">一建四科 + 英语，每天自动更新</div>
+      <div class="card">
+        <h2>🎯 考试倒计时</h2>
+        <div id="examBox"></div>
+        <div class="row" style="margin-top:10px">
+          <input type="text" id="examName" placeholder="目标考试">
+          <input type="date" id="examDate">
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn ghost" style="flex:1" onclick="Study.saveExam()">更新倒计时</button>
+        </div>
+      </div>
+      <div class="card wide">
+        <h2>✅ 今日学习任务</h2>
+        <div id="taskList"></div>
+        <div class="row" style="margin-top:10px">
+          <input type="text" id="taskText" placeholder="添加今天的学习任务…">
+          <button class="btn" onclick="Study.addTask()">添加</button>
+        </div>
+      </div>
+      <div class="card wide">
+        <h2>🔤 英语 · 今日单词 <span class="hint" id="wordSub" style="margin:0 0 0 auto"></span></h2>
+        <div class="pbar"><i id="wordBar"></i></div>
+        <div id="wordList"></div>
+      </div>
+      <div class="card wide">
+        <h2>🏗️ 一建 · 今日考点 <span class="hint" id="pointSub" style="margin:0 0 0 auto"></span></h2>
+        <div class="pbar"><i id="pointBar"></i></div>
+        <div id="pointList"></div>
+      </div>
+      <div class="card">
+        <h2>📈 四科复习进度</h2>
+        <div id="progList"></div>
+      </div>
+      <div class="card">
+        <h2>⏱️ 学习时长 <span class="hint" id="timeSub" style="margin:0 0 0 auto"></span></h2>
+        <div id="timeChart"></div>
+        <div class="row" style="margin-top:8px">
+          <button class="mini" style="flex:1" onclick="Study.addTime(15)">+15 分钟</button>
+          <button class="mini" style="flex:1" onclick="Study.addTime(30)">+30 分钟</button>
+          <button class="mini" style="flex:1" onclick="Study.addTime(60)">+1 小时</button>
+        </div>
+      </div>
+      <div class="card wide">
+        <h2>📌 错题 / 重点速记</h2>
+        <div id="noteList"></div>
+        <div class="row" style="margin-top:10px">
+          <select id="noteTag" style="max-width:96px"><option>错题</option><option>重点</option></select>
+          <input type="text" id="noteText" placeholder="快速记录…">
+          <button class="btn" onclick="Study.addNote()">记下</button>
+        </div>
+      </div>
+    </section>
+    <!-- ==== 功能：学习 END ==== -->
+
+    <!-- ==== 功能：读书 START ==== -->
+    <section class="page" id="page-read">
+      <div class="page-title">读书</div>
+      <div class="page-sub">在读什么、读到哪了、随手一句感想</div>
+      <div class="card">
+        <div class="row">
+          <input type="text" id="readTitle" placeholder="书名…">
+          <select id="readStatus" style="max-width:110px"><option>在读</option><option>想读</option><option>读过</option></select>
+          <button class="btn" onclick="Read.add()">添加</button>
+        </div>
+      </div>
+      <div class="card wide">
+        <div id="readList"></div>
+      </div>
+    </section>
+    <!-- ==== 功能：读书 END ==== -->
+
+    <!-- ==== 功能：周复盘 START ==== -->
+    <section class="page" id="page-recap">
+      <div class="page-title">这一周</div>
+      <div class="page-sub">周日晚上看一眼，比任何提醒都管用</div>
+      <div class="card wide">
+        <div id="recapBody"></div>
+        <div class="row" style="margin-top:18px">
+          <button class="btn" onclick="Recap.makeCard()">生成图卡</button>
+        </div>
+        <p class="hint">生成一张能存下来的图，想发就发。图上不含你的具体记录内容。</p>
+      </div>
+    </section>
+    <!-- ==== 功能：周复盘 END ==== -->
+
+    <!-- 设置页是必备的，不要删 -->
+    <!-- ==== 功能：设置 START ==== -->
+    <section class="page" id="page-settings">
+      <div class="page-title">设置</div>
+
+      <div class="card">
+        <h2>💾 数据备份</h2>
+        <p class="hint" style="margin-top:0;margin-bottom:12px">
+          你的所有数据都存在这台设备的浏览器里，并同步到你自己的云端空间。<br>
+          换手机、清理浏览器数据前，记得先导出备份。
+        </p>
+        <div class="row">
+          <button class="btn" onclick="Store.exportFile()">导出备份</button>
+          <button class="btn ghost" onclick="document.getElementById('importFile').click()">恢复备份</button>
+        </div>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="Store.importFile(this)">
+        <p class="hint" id="backupInfo"></p>
+      </div>
+
+      <!-- ==== 双端同步卡片 START ==== -->
+      <div class="card wide" id="syncCard">
+        <h2>🔄 双端同步 <span class="hint" id="syncState" style="margin:0 0 0 auto;font-size:var(--fs-meta)"></span></h2>
+        <div id="syncOff">
+          <p class="hint" style="margin-top:0">
+            开启后手机和电脑登同一个账号，记的东西自动对齐。<br>
+            <b>数据会在你的设备和云端各存一份</b>，本地那份始终在，断网照样能记。<br>
+            云端那份是明文的——只有知道你密码的人能读，但平台运维理论上能看到。<br>
+            <b>密码忘了就进不去了，没有找回功能。</b>
+          </p>
+          <div style="margin-top:14px">
+            <input type="text" id="syncUser" placeholder="用户名（3-32 个字符，只用来定位你的数据）" autocomplete="username">
+          </div>
+          <div style="margin-top:10px">
+            <input type="password" id="syncPass" placeholder="密码（至少 8 位）" autocomplete="new-password">
+          </div>
+          <div class="row" style="margin-top:14px">
+            <button class="btn" onclick="Settings.enableSync()">开启同步</button>
+            <button class="btn ghost" onclick="Store.exportFile()">先导出备份</button>
+          </div>
+          <p class="hint">建议先导出一份备份再开——万一以后忘了密码，本地这份还在。</p>
+        </div>
+        <div id="syncOn" style="display:none">
+          <p class="hint" style="margin-top:0">账号：<b id="syncWho" class="mono"></b><br>上次同步：<span id="syncTime"></span></p>
+          <div class="row" style="margin-top:14px">
+            <button class="btn" onclick="Sync.pull(true)">立即同步</button>
+            <button class="btn ghost" onclick="Settings.changePass()">改密码</button>
+            <button class="btn ghost" onclick="Sync.disable()">关闭同步</button>
+          </div>
+          <p class="hint">
+            刚在另一台设备改的东西，这边最多等一分钟才看得到（云端缓存机制），
+            等不及就点「立即同步」。
+          </p>
+        </div>
+      </div>
+      <!-- ==== 双端同步卡片 END ==== -->
+
+      <div class="card">
+        <h2>⚠️ 危险操作</h2>
+        <button class="btn danger" onclick="Store.wipe()">清空所有数据</button>
+        <p class="hint">清空前请确认已经导出过备份，这个操作无法撤销。</p>
+      </div>
+
+      <div class="card">
+        <p class="hint" style="margin:0;text-align:center">
+          黄同学的工作台<br>
+          <span style="opacity:.6">由 不一书个人工作台生成器 生成</span>
+        </p>
+      </div>
+    </section>
+    <!-- ==== 功能：设置 END ==== -->
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="features/内容库.js"></script>
+<script src="features/学习.js"></script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   Store · 存储抽象层
+   所有数据读写都必须走这里，不要直接用 localStorage。
+   数组型数据用 list/upsert/softDelete，可双端合并。
+   ═══════════════════════════════════════════════════════════ */
+const Store = (() => {
+  const NS  = 'bysdash:';
+  const SEC = 'bysdash$secret:';
+  const TOMB_TTL = 30 * 864e5;
+
+  const driver = {
+    get(k){ try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+    set(k,v){
+      try { localStorage.setItem(k, JSON.stringify(v)); return true; }
+      catch(e){
+        UI.toast('存储空间满了，请到设置里导出备份后清理旧数据');
+        console.error(e); return false;
+      }
+    },
+    remove(k){ localStorage.removeItem(k); },
+    keys(){ return Object.keys(localStorage); }
+  };
+
+  const now = () => Date.now();
+
+  function mergeList(a, b){
+    const m = new Map();
+    for (const it of [...(a || []), ...(b || [])]) {
+      if (!it || !it.id) continue;
+      const prev = m.get(it.id);
+      if (!prev || (it._u || 0) > (prev._u || 0)) m.set(it.id, it);
+    }
+    return [...m.values()];
+  }
+
+  const S = {
+    get(key, fallback = null){
+      const v = driver.get(NS + key);
+      return v === null || v === undefined ? fallback : v;
+    },
+    set(key, val){
+      const ok = driver.set(NS + key, val);
+      if (ok) this._touch();
+      return ok;
+    },
+    remove(key){ driver.remove(NS + key); this._touch(); },
+
+    list(key, sort){
+      const raw = this.get(key, []);
+      if (!Array.isArray(raw)) return [];
+      const cut = now() - TOMB_TTL;
+      const alive = [], keep = [];
+      for (const it of raw) {
+        if (it && it._d) { if ((it._u || 0) > cut) keep.push(it); continue; }
+        if (it) { alive.push(it); keep.push(it); }
+      }
+      if (keep.length !== raw.length) driver.set(NS + key, keep);
+      return sort ? alive.sort(sort) : alive;
+    },
+
+    upsert(key, item){
+      const raw = this.get(key, []);
+      const it = Object.assign({}, item);
+      if (!it.id) it.id = Util.uid();
+      it._u = now();
+      delete it._d;
+      const i = raw.findIndex(x => x && x.id === it.id);
+      if (i >= 0) raw[i] = Object.assign({}, raw[i], it); else raw.push(it);
+      this.set(key, raw);
+      return it;
+    },
+
+    softDelete(key, id){
+      const raw = this.get(key, []);
+      const i = raw.findIndex(x => x && x.id === id);
+      if (i >= 0) raw[i] = { id, _d: 1, _u: now() };
+      else raw.push({ id, _d: 1, _u: now() });
+      this.set(key, raw);
+    },
+
+    incr(key, n = 1){
+      const raw = this.get(key, []);
+      for (let i = 0; i < n; i++) raw.push({ id: Util.uid(), _u: now() });
+      this.set(key, raw);
+      return this.count(key);
+    },
+    decr(key){
+      const alive = this.list(key);
+      if (alive.length) this.softDelete(key, alive[alive.length - 1].id);
+      return this.count(key);
+    },
+    count(key){ return this.list(key).length; },
+
+    getDaily(key, fallback = null){ return this.get(key + ':' + Util.today(), fallback); },
+    setDaily(key, val){ return this.set(key + ':' + Util.today(), val); },
+    listDaily(key, sort){ return this.list(key + ':' + Util.today(), sort); },
+    upsertDaily(key, item){ return this.upsert(key + ':' + Util.today(), item); },
+    incrDaily(key, n = 1){ return this.incr(key + ':' + Util.today(), n); },
+    decrDaily(key){ return this.decr(key + ':' + Util.today()); },
+    countDaily(key){ return this.count(key + ':' + Util.today()); },
+
+    getSecret(key){ return driver.get(SEC + key); },
+    setSecret(key, val){ return driver.set(SEC + key, val); },
+
+    _stableId(o){
+      const s = JSON.stringify(Object.keys(o).sort().map(k => [k, o[k]]));
+      let h = 0;
+      for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+      return 'm' + (h >>> 0).toString(36);
+    },
+
+    migrate(){
+      if (this.get('_migrated')) return 0;
+      let n = 0;
+      driver.keys().filter(k => k.startsWith(NS)).forEach(k => {
+        const v = driver.get(k);
+        if (!Array.isArray(v) || !v.length) return;
+        let touched = false;
+        const fixed = v.map(it => {
+          if (!it || typeof it !== 'object') return it;
+          const o = Object.assign({}, it);
+          if (!o.id) { o.id = this._stableId(it); touched = true; }
+          if (!o._u) { o._u = 1; touched = true; }
+          return o;
+        });
+        if (touched) { driver.set(k, fixed); n++; }
+      });
+      this.set('_migrated', Date.now());
+      if (n) console.info(`[迁移] 已为 ${n} 组历史数据补齐标识，一条没少`);
+      return n;
+    },
+
+    _touch(){
+      driver.set(NS + '_lastWrite', now());
+      if (typeof Sync !== 'undefined' && Sync.on && Sync.on()) Sync.schedule();
+    },
+    mergeList,
+    mergeRemote(remote){
+      if (!remote || typeof remote !== 'object') return 0;
+      let changed = 0;
+      for (const [key, rv] of Object.entries(remote)) {
+        if (key.startsWith('_')) continue;
+        const lv = this.get(key, null);
+        if (Array.isArray(rv)) {
+          const merged = mergeList(Array.isArray(lv) ? lv : [], rv);
+          if (JSON.stringify(merged) !== JSON.stringify(lv)) { driver.set(NS + key, merged); changed++; }
+        } else if (lv === null || lv === undefined) {
+          driver.set(NS + key, rv); changed++;
+        }
+      }
+      return changed;
+    },
+    dump(){
+      const data = {};
+      driver.keys().filter(k => k.startsWith(NS)).forEach(k => {
+        data[k.slice(NS.length)] = driver.get(k);
+      });
+      return data;
+    },
+
+    exportAll(){
+      return { app:'黄同学的工作台', version:2, exportedAt:new Date().toISOString(), data:this.dump() };
+    },
+
+    exportFile(){
+      const blob = new Blob([JSON.stringify(this.exportAll(), null, 2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = '黄同学备份-' + Util.today() + '.json';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      this.set('_lastBackup', now());
+      UI.toast('已导出，建议转发到微信文件传输助手存一份');
+      Settings.refreshBackupInfo();
+    },
+
+    importFile(input){
+      const f = input.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = e => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (!parsed.data) throw new Error('格式不对');
+          if (!confirm('恢复备份会与当前数据合并，确定吗？')) return;
+          const n = this.mergeRemote(parsed.data);
+          Object.entries(parsed.data).forEach(([k,v]) => {
+            if (!Array.isArray(v) && this.get(k, null) === null) driver.set(NS + k, v);
+          });
+          UI.toast('已合并 ' + n + ' 项，正在重新加载');
+          setTimeout(() => location.reload(), 900);
+        } catch(err){ UI.toast('文件读不了，可能不是备份文件'); }
+      };
+      r.readAsText(f);
+      input.value = '';
+    },
+
+    wipe(){
+      if (!confirm('确定清空所有数据？这个操作无法撤销。')) return;
+      if (!confirm('再确认一次：真的要清空吗？')) return;
+      driver.keys().filter(k => k.startsWith(NS)).forEach(k => driver.remove(k));
+      location.reload();
+    }
+  };
+  return S;
+})();
+
+
+/* ═══════════════════════════════════════════════════════════
+   Util · 工具
+   ═══════════════════════════════════════════════════════════ */
+const Util = {
+  today(){
+    const d = new Date();
+    return d.getFullYear() + '-' +
+           String(d.getMonth()+1).padStart(2,'0') + '-' +
+           String(d.getDate()).padStart(2,'0');
+  },
+  uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); },
+  dateOf(d){
+    return d.getFullYear() + '-' +
+           String(d.getMonth()+1).padStart(2,'0') + '-' +
+           String(d.getDate()).padStart(2,'0');
+  },
+  offsetDay(n){ const d = new Date(); d.setDate(d.getDate() + n); return this.dateOf(d); },
+  esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); },
+
+  compressImage(file, maxW = 800, quality = .72){
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxW / img.width);
+        const cv = document.createElement('canvas');
+        cv.width  = img.width  * scale;
+        cv.height = img.height * scale;
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        resolve(cv.toDataURL('image/jpeg', quality));
+        URL.revokeObjectURL(img.src);
+      };
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  }
+};
+
+
+/* ═══════════════════════════════════════════════════════════
+   UI · 界面工具
+   ═══════════════════════════════════════════════════════════ */
+const UI = {
+  toast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('on');
+    clearTimeout(this._t);
+    this._t = setTimeout(() => t.classList.remove('on'), 2200);
+  },
+  banner(html, pageId = null){
+    const box = document.createElement('div');
+    box.className = 'banner';
+    box.innerHTML = html;
+    const target = pageId ? document.getElementById(pageId) : document.querySelector('.page.on');
+    target?.prepend(box);
+    return box;
+  }
+};
+
+
+/* ═══════════════════════════════════════════════════════════
+   App · 路由与启动
+   ═══════════════════════════════════════════════════════════ */
+const App = {
+  routes: [
+    { id:'today',    icon:'🏠', name:'今日',  onShow: () => Today.render()   },
+    { id:'project',  icon:'📋', name:'项目',  onShow: () => Project.render() },
+    { id:'issue',    icon:'🔧', name:'问题',  onShow: () => Issue.render()   },
+    { id:'farm',     icon:'🌾', name:'农事',  onShow: () => Farm.render()    },
+    { id:'money',    icon:'💰', name:'记账',  onShow: () => Money.render()   },
+    { id:'study',    icon:'📚', name:'学习',  onShow: () => Study.render()   },
+    { id:'read',     icon:'📖', name:'读书',  onShow: () => Read.render()    },
+    { id:'recap',    icon:'📊', name:'复盘',  onShow: () => Recap.render()   },
+    { id:'settings', icon:'⚙️', name:'设置',  onShow: () => Settings.render() }
+  ],
+
+  go(id){
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+    document.getElementById('page-' + id)?.classList.add('on');
+    document.querySelectorAll('#nav button').forEach(b =>
+      b.classList.toggle('on', b.dataset.id === id));
+    document.getElementById('main').scrollTop = 0;
+    Store.set('_lastPage', id);
+    this.routes.find(r => r.id === id)?.onShow?.();
+  },
+
+  init(){
+    Store.migrate();
+    document.getElementById('nav').innerHTML = this.routes.map(r =>
+      `<button data-id="${r.id}" onclick="App.go('${r.id}')">
+         <span class="ico">${r.icon}</span>${r.name}
+       </button>`).join('');
+
+    const last = Store.get('_lastPage');
+    this.go(this.routes.some(r => r.id === last) ? last : this.routes[0].id);
+
+    this.checkBackup();
+    if (typeof Sync !== 'undefined') Sync.init();
+  },
+
+  refresh(){
+    const cur = document.querySelector('.page.on');
+    if (!cur) return;
+    const id = cur.id.replace('page-', '');
+    this.routes.find(r => r.id === id)?.onShow?.();
+  },
+
+  checkBackup(){
+    const last = Store.get('_lastBackup');
+    const write = Store.get('_lastWrite');
+    if (!write) return;
+    const days = last ? (Date.now() - last) / 864e5 : 99;
+    if (days < 7) return;
+    const b = UI.banner(
+      `<span>${last ? '已经 ' + Math.floor(days) + ' 天没备份了' : '记得备份一下，数据只在这台设备上'}</span>
+       <button onclick="App.go('settings')">去备份</button>`);
+  }
+};
+
+
+/* ═══════════════════════════════════════════════════════════
+   Settings · 设置页
+   ═══════════════════════════════════════════════════════════ */
+const Settings = {
+  keys: [],
+
+  render(){
+    this.refreshBackupInfo();
+    this.renderSync();
+  },
+
+  enableSync(){
+    Sync.enable(document.getElementById('syncUser').value,
+                document.getElementById('syncPass').value);
+  },
+
+  changePass(){
+    const np = prompt('输入新密码（至少 8 位）');
+    if (np) Sync.changePass(np);
+  },
+
+  renderSync(){
+    const card = document.getElementById('syncCard');
+    if (!card || typeof Sync === 'undefined') return;
+    const on = Sync.on();
+    document.getElementById('syncOff').style.display = on ? 'none' : 'block';
+    document.getElementById('syncOn').style.display  = on ? 'block' : 'none';
+    if (on) {
+      document.getElementById('syncWho').textContent = Sync.cfg().user;
+      const t = Store.get('_syncAt');
+      document.getElementById('syncTime').textContent =
+        t ? new Date(t).toLocaleString('zh-CN') : '还没同步过';
+    }
+  },
+
+  refreshBackupInfo(){
+    const last = Store.get('_lastBackup');
+    const el = document.getElementById('backupInfo');
+    if (el) el.textContent = last
+      ? '上次备份：' + new Date(last).toLocaleDateString('zh-CN')
+      : '还没备份过';
+  }
+};
+
+
+/* ==== 双端同步 START ====
+   三条设计红线：
+   1. 本地优先 —— 写入永远先落 localStorage，云端异步。
+   2. 绝不轮询 —— 只在「打开时 / 切回前台 / 手动刷新」拉取。
+   3. 推送防抖 —— 改动后等 4 秒再推，合并成一次请求。 */
+const Sync = {
+  DEBOUNCE: 4000,
+  _timer: null,
+  _busy: false,
+
+  cfg(){ return Store.get('_sync', { on:false, user:'' }); },
+  on(){ return !!this.cfg().on; },
+  pass(){ return Store.getSecret('syncPass') || ''; },
+
+  async call(action, extra = {}){
+    const c = this.cfg();
+    const r = await fetch('/api/sync', {
+      method:'POST',
+      headers:{ 'content-type':'application/json' },
+      body: JSON.stringify(Object.assign({ action, user:c.user, pass:this.pass() }, extra))
+    });
+    const j = await r.json().catch(() => ({ error:'返回格式不对' }));
+    if (!r.ok) throw new Error(j.error || ('请求失败 ' + r.status));
+    return j;
+  },
+
+  async enable(user, pass){
+    user = (user || '').trim().toLowerCase();
+    if (user.length < 3) return UI.toast('用户名至少 3 个字符');
+    if ((pass || '').length < 8) return UI.toast('密码至少 8 位');
+    Store.set('_sync', { on:true, user });
+    Store.setSecret('syncPass', pass);
+    try {
+      const j = await this.call('push', { data: Store.dump() });
+      if (j.data) Store.mergeRemote(j.data);
+      Store.set('_syncAt', Date.now());
+      UI.toast(j.created ? '同步已开启' : '已连上，数据已合并');
+      setTimeout(() => location.reload(), 900);
+    } catch(e){
+      Store.set('_sync', { on:false, user:'' });
+      Store.setSecret('syncPass', '');
+      UI.toast(e.message);
+    }
+  },
+
+  disable(){
+    if (!confirm('关闭同步？本地数据一条不会少，只是不再和云端对齐。')) return;
+    Store.set('_sync', { on:false, user:'' });
+    Store.setSecret('syncPass', '');
+    UI.toast('已关闭同步');
+    Settings.render();
+  },
+
+  async changePass(np){
+    if ((np || '').length < 8) return UI.toast('新密码至少 8 位');
+    try {
+      await this.call('chpass', { newPass: np });
+      Store.setSecret('syncPass', np);
+      UI.toast('密码已改');
+    } catch(e){ UI.toast(e.message); }
+  },
+
+  async pull(loud){
+    if (!this.on() || this._busy) return;
+    this._busy = true;
+    this.status('同步中');
+    try {
+      const j = await this.call('pull');
+      const n = Store.mergeRemote(j.data || {});
+      Store.set('_syncAt', Date.now());
+      this.status('已同步');
+      if (n) { if (loud) UI.toast('拉到 ' + n + ' 处更新'); App.refresh(); }
+      else if (loud) UI.toast('已是最新');
+    } catch(e){
+      this.status('未同步');
+      if (loud) UI.toast(e.message.includes('NO_ACCOUNT') ? '云端还没有数据' : e.message);
+    } finally { this._busy = false; }
+  },
+
+  schedule(){
+    if (!this.on()) return;
+    clearTimeout(this._timer);
+    this._timer = setTimeout(() => this.push(), this.DEBOUNCE);
+  },
+
+  async push(){
+    if (!this.on() || this._busy) return;
+    this._busy = true;
+    this.status('同步中');
+    try {
+      const j = await this.call('push', { data: Store.dump() });
+      if (j.data) Store.mergeRemote(j.data);
+      Store.set('_syncAt', Date.now());
+      this.status('已同步');
+    } catch(e){
+      this.status('未同步');
+      console.warn('同步失败，本地数据不受影响：', e.message);
+    } finally { this._busy = false; }
+  },
+
+  status(t){
+    const el = document.getElementById('syncState');
+    if (el) el.textContent = t;
+  },
+
+  init(){
+    if (!this.on()) return;
+    this.pull();
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) this.pull();
+    });
+    window.addEventListener('online', () => this.push());
+  }
+};
+/* ==== 双端同步 END ==== */
+
+
+/* ==== 功能：今日 START ==== */
+const Today = {
+  WICONS:{
+    sun:'<svg viewBox="0 0 24 24" fill="none" stroke="#d4a373" stroke-width="1.7"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5 5l1.8 1.8M17.2 17.2L19 19M19 5l-1.8 1.8M6.8 17.2L5 19"/></svg>',
+    cloud:'<svg viewBox="0 0 24 24" fill="none" stroke="#8b949e" stroke-width="1.7"><path d="M7 18a4.5 4.5 0 01-.5-9A6 6 0 0118 10a3.5 3.5 0 01-.5 8z"/></svg>',
+    rain:'<svg viewBox="0 0 24 24" fill="none" stroke="#6cb6ff" stroke-width="1.7"><path d="M7 14a4.5 4.5 0 01-.5-9A6 6 0 0118 6a3.5 3.5 0 01-.5 8z"/><path d="M8 17l-1 3M13 17l-1 3M18 17l-1 3"/></svg>',
+    snow:'<svg viewBox="0 0 24 24" fill="none" stroke="#8fb3cf" stroke-width="1.7"><path d="M12 3v18M4 7.5l16 9M20 7.5l-16 9"/></svg>',
+    fog:'<svg viewBox="0 0 24 24" fill="none" stroke="#8b949e" stroke-width="1.7"><path d="M4 10h16M6 14h14M8 18h10"/></svg>'
+  },
+  WMAP:{0:['晴','sun'],1:['多云间晴','sun'],2:['多云','cloud'],3:['阴','cloud'],45:['雾','fog'],48:['雾凇','fog'],
+    51:['毛毛雨','rain'],53:['毛毛雨','rain'],55:['毛毛雨','rain'],61:['小雨','rain'],63:['中雨','rain'],65:['大雨','rain'],
+    66:['冻雨','rain'],67:['冻雨','rain'],71:['小雪','snow'],73:['中雪','snow'],75:['大雪','snow'],77:['雪粒','snow'],
+    80:['阵雨','rain'],81:['阵雨','rain'],82:['暴雨','rain'],85:['阵雪','snow'],86:['阵雪','snow'],
+    95:['雷暴','rain'],96:['雷暴冰雹','rain'],99:['雷暴冰雹','rain']},
+  winfo(c){ return this.WMAP[c] || ['多云','cloud']; },
+
+  render(){
+    const d = new Date(), h = d.getHours();
+    const greet = h<6?'夜深了':h<11?'早上好':h<14?'中午好':h<18?'下午好':'晚上好';
+    document.getElementById('todayGreet').textContent = greet + '，黄同学';
+    document.getElementById('todayDate').textContent =
+      `${d.getFullYear()} 年 ${d.getMonth()+1} 月 ${d.getDate()} 日 · 星期${'日一二三四五六'[d.getDay()]}`;
+    this.renderTodo();
+    this.loadWeather(false);
+  },
+
+  renderTodo(){
+    const open = Store.list('issues').filter(i => i.status !== '已解决');
+    const tasks = Store.list('studyTasks').filter(t => !t.done);
+    let html = '';
+    open.forEach(i => { html += `<div class="item">
+      <span class="grow"><span class="tag ${i.status==='待处理'?'red':'acc'}">${i.status}</span>${Util.esc(i.text)}</span>
+      <button class="mini" onclick="App.go('issue')">去处理</button></div>`; });
+    tasks.forEach(t => { html += `<div class="item">
+      <span class="grow"><span class="tag">学习</span>${Util.esc(t.text)}</span>
+      <button class="mini" onclick="App.go('study')">去学习</button></div>`; });
+    if (!Store.countDaily('wordStat')) html += `<div class="item">
+      <span class="grow"><span class="tag">学习</span>今日英语单词还没学</span>
+      <button class="mini" onclick="App.go('study')">去背单词</button></div>`;
+    if (!Store.countDaily('pointStat')) html += `<div class="item">
+      <span class="grow"><span class="tag">学习</span>今日一建考点还没看</span>
+      <button class="mini" onclick="App.go('study')">去看考点</button></div>`;
+    document.getElementById('todayList').innerHTML = html || '<div class="empty">今天的事情都处理完了 👍</div>';
+  },
+
+  async loadWeather(force){
+    const box = document.getElementById('weatherBox');
+    const cached = Store.get('weatherCache');
+    if (cached && !force){ this.paintWeather(cached, false); return; }
+    const city = Store.get('city', '周口');
+    try {
+      const g = await (await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' +
+        encodeURIComponent(city) + '&count=1&language=zh')).json();
+      if (!g.results || !g.results.length) throw 0;
+      const { latitude, longitude, name } = g.results[0];
+      const w = await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=7`)).json();
+      const data = { city:name, cur:w.current, daily:w.daily };
+      Store.set('weatherCache', data);
+      this.paintWeather(data, false);
+    } catch(e){
+      if (cached) this.paintWeather(cached, true);
+      else box.innerHTML = '<div class="empty">天气暂时加载不了，点「更新」重试</div>';
+    }
+  },
+
+  paintWeather(w, offline){
+    const [desc, ico] = this.winfo(w.cur.weather_code);
+    const days = w.daily.time.map((t,i) => {
+      const [dd, ii] = this.winfo(w.daily.weather_code[i]);
+      return `<div class="w-day">${i===0?'今天':t.slice(5).replace('-','/')}${this.WICONS[ii]}
+        <div>${Math.round(w.daily.temperature_2m_min[i])}°/${Math.round(w.daily.temperature_2m_max[i])}°</div></div>`;
+    }).join('');
+    document.getElementById('weatherBox').innerHTML = `
+      <div class="w-now">${this.WICONS[ico]}
+        <div><div class="t num">${Math.round(w.cur.temperature_2m)}°</div>
+        <div class="hint" style="margin-top:2px">${Util.esc(w.city)} · ${desc}${offline?'（离线缓存）':''}</div></div>
+      </div><div class="w-days">${days}</div>`;
+  },
+
+  setCity(){
+    const c = document.getElementById('cityInput').value.trim();
+    if (!c) return;
+    Store.set('city', c);
+    document.getElementById('cityInput').value = '';
+    this.loadWeather(true);
+  }
+};
+/* ==== 功能：今日 END ==== */
+
+
+/* ==== 功能：项目 START ==== */
+const Project = {
+  render(){
+    const list = Store.list('projects');
+    document.getElementById('projectList').innerHTML = list.length ? list.map(p => `
+      <div style="padding:12px 0;border-bottom:1px dashed rgba(128,128,128,.22)">
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <b style="font-weight:500;font-size:16px;flex:1;min-width:0">${Util.esc(p.name)}</b>
+          <span class="tag acc">${Util.esc(p.stage||'未分阶段')}</span>
+          <span class="num" style="color:var(--accent)">${p.pct||0}%</span>
+        </div>
+        <div class="pbar"><i style="width:${p.pct||0}%"></i></div>
+        ${p.note?`<div class="hint" style="margin-top:2px">${Util.esc(p.note)}</div>`:''}
+        <div class="row" style="margin-top:8px">
+          <button class="mini" style="flex:1" onclick="Project.bump('${p.id}',-5)">−5%</button>
+          <button class="mini" style="flex:1" onclick="Project.bump('${p.id}',5)">+5%</button>
+          <button class="mini" style="flex:1" onclick="Project.editStage('${p.id}')">改阶段</button>
+          <button class="mini" style="flex:1" onclick="Project.editNote('${p.id}')">备注</button>
+          <button class="del" onclick="Project.del('${p.id}')">✕</button>
+        </div>
+      </div>`).join('') : '<div class="empty">还没有项目，下面新建一个（比如按地块建）</div>';
+  },
+  add(){
+    const name = document.getElementById('projName').value.trim();
+    if (!name) return;
+    Store.upsert('projects', { name, stage: document.getElementById('projStage').value.trim(), pct: 0, note: '' });
+    document.getElementById('projName').value = '';
+    document.getElementById('projStage').value = '';
+    UI.toast('已添加');
+    this.render();
+  },
+  bump(id, d){
+    const p = Store.list('projects').find(x => x.id === id);
+    if (p) Store.upsert('projects', { id, pct: Math.max(0, Math.min(100, (p.pct||0) + d)) });
+    this.render();
+  },
+  editStage(id){
+    const p = Store.list('projects').find(x => x.id === id);
+    if (!p) return;
+    const v = prompt('当前阶段', p.stage || '');
+    if (v !== null) Store.upsert('projects', { id, stage: v.trim() });
+    this.render();
+  },
+  editNote(id){
+    const p = Store.list('projects').find(x => x.id === id);
+    if (!p) return;
+    const v = prompt('备注', p.note || '');
+    if (v !== null) Store.upsert('projects', { id, note: v.trim() });
+    this.render();
+  },
+  del(id){
+    if (!confirm('删除这个项目？')) return;
+    Store.softDelete('projects', id);
+    this.render();
+  }
+};
+/* ==== 功能：项目 END ==== */
+
+
+/* ==== 功能：问题 START ==== */
+const Issue = {
+  NEXT: { '待处理':'处理中', '处理中':'已解决', '已解决':'待处理' },
+  render(){
+    const order = { '待处理':0, '处理中':1, '已解决':2 };
+    const list = Store.list('issues').sort((a,b) => (order[a.status]??0)-(order[b.status]??0) || (a.date<b.date?1:-1));
+    document.getElementById('issueList').innerHTML = list.length ? list.map(i => `
+      <div class="item">
+        <span class="grow">
+          <span class="tag ${i.status==='待处理'?'red':i.status==='处理中'?'acc':'green'}">${i.status}</span>
+          ${Util.esc(i.text)}
+          <div class="hint" style="margin-top:2px">${i.date}${i.note?' · '+Util.esc(i.note):''}</div>
+        </span>
+        <button class="mini" onclick="Issue.cycle('${i.id}')">${i.status==='已解决'?'重开':this.NEXT[i.status]}</button>
+        <button class="del" onclick="Issue.del('${i.id}')">✕</button>
+      </div>`).join('') : '<div class="empty">目前没有待处理的问题，田里一切顺利</div>';
+  },
+  add(){
+    const v = document.getElementById('issueText').value.trim();
+    if (!v) return;
+    Store.upsert('issues', { text:v, date:Util.today(), status:'待处理', note:'', doneDate:'' });
+    document.getElementById('issueText').value = '';
+    UI.toast('已记录');
+    this.render();
+  },
+  cycle(id){
+    const i = Store.list('issues').find(x => x.id === id);
+    if (!i) return;
+    const next = this.NEXT[i.status] || '待处理';
+    Store.upsert('issues', { id, status: next, doneDate: next === '已解决' ? Util.today() : '' });
+    if (next === '已解决') UI.toast('解决了 👍');
+    this.render();
+  },
+  del(id){
+    if (!confirm('删除这条问题记录？')) return;
+    Store.softDelete('issues', id);
+    this.render();
+  }
+};
+/* ==== 功能：问题 END ==== */
+
+
+/* ==== 功能：农事 START ==== */
+const Farm = {
+  render(){
+    document.getElementById('farmDate').value = Util.today();
+    const list = Store.list('farm', (a,b) => a.date < b.date ? 1 : -1).slice(0, 50);
+    document.getElementById('farmList').innerHTML = list.length ? list.map(f => `
+      <div class="item">
+        <span class="grow">
+          <span class="tag acc">${Util.esc(f.type)}</span><b style="font-weight:500">${Util.esc(f.plot)}</b>
+          ${f.amount?`<span style="margin-left:8px">${Util.esc(f.amount)}</span>`:''}
+          <div class="hint" style="margin-top:2px">${f.date}${f.note?' · '+Util.esc(f.note):''}</div>
+        </span>
+        <button class="del" onclick="Farm.del('${f.id}')">✕</button>
+      </div>`).join('') : '<div class="empty">还没有记录，今天干了什么就记一笔</div>';
+  },
+  add(){
+    const plot = document.getElementById('farmPlot').value.trim();
+    if (!plot){ UI.toast('填一下地块'); return; }
+    Store.upsert('farm', {
+      date: document.getElementById('farmDate').value || Util.today(),
+      plot,
+      type: document.getElementById('farmType').value,
+      amount: document.getElementById('farmAmount').value.trim(),
+      note: document.getElementById('farmNote').value.trim()
+    });
+    document.getElementById('farmPlot').value = '';
+    document.getElementById('farmAmount').value = '';
+    document.getElementById('farmNote').value = '';
+    UI.toast('已记下');
+    this.render();
+  },
+  del(id){ Store.softDelete('farm', id); this.render(); }
+};
+/* ==== 功能：农事 END ==== */
+
+
+/* ==== 功能：记账 START ==== */
+const Money = {
+  CATS_OUT:['种子','肥料','农药','农机','人工','生活','其他'],
+  CATS_IN:['销售','补贴','其他'],
+  PALETTE:['#1f6feb','#6cb6ff','#57ab5a','#d4a373','#a594c8','#f47067','#8b949e'],
+  type:'out',
+
+  render(){
+    document.getElementById('moneyDate').value = Util.today();
+    this.paintType();
+    this.renderSummary();
+    this.renderChart();
+    this.renderList();
+  },
+
+  setType(t){ this.type = t; this.paintType(); },
+  paintType(){
+    const out = document.getElementById('moneyOut'), inn = document.getElementById('moneyIn');
+    out.className = 'mini' + (this.type==='out' ? ' solid' : '');
+    inn.className = 'mini' + (this.type==='in' ? ' solid' : '');
+    document.getElementById('moneyCat').innerHTML =
+      (this.type==='out' ? this.CATS_OUT : this.CATS_IN).map(c => `<option>${c}</option>`).join('');
+  },
+
+  monthTx(){
+    const m = Util.today().slice(0,7);
+    return Store.list('money').filter(t => t.date && t.date.startsWith(m));
+  },
+
+  renderSummary(){
+    let inc = 0, exp = 0;
+    this.monthTx().forEach(t => { t.type==='in' ? inc += t.amount : exp += t.amount; });
+    const bal = inc - exp;
+    document.getElementById('moneySummary').innerHTML = `
+      <div class="hero num" style="color:${bal>=0?'#57ab5a':'#f47067'}">¥${Math.abs(bal).toFixed(2)}<span class="unit">本月${bal>=0?'结余':'超支'}</span></div>
+      <p class="hint">收入 <span style="color:#57ab5a">¥${inc.toFixed(2)}</span> · 支出 <span style="color:#f47067">¥${exp.toFixed(2)}</span></p>`;
+  },
+
+  renderChart(){
+    const byCat = {};
+    this.monthTx().filter(t => t.type==='out').forEach(t => { byCat[t.cat] = (byCat[t.cat]||0) + t.amount; });
+    const entries = Object.entries(byCat).sort((a,b) => b[1]-a[1]);
+    const total = entries.reduce((s,e) => s+e[1], 0);
+    const box = document.getElementById('moneyChart');
+    if (!total){ box.innerHTML = '<div class="empty">本月还没有支出记录</div>'; return; }
+    const R = 70, C = 2*Math.PI*R;
+    let acc = 0;
+    const arcs = entries.map((e,i) => {
+      const frac = e[1]/total, len = frac*C, off = -acc*C; acc += frac;
+      return `<circle cx="100" cy="100" r="${R}" fill="none" stroke="${this.PALETTE[i%this.PALETTE.length]}" stroke-width="26"
+        stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${off}" transform="rotate(-90 100 100)"/>`;
+    }).join('');
+    box.innerHTML = `<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+      <svg viewBox="0 0 200 200" style="width:170px;flex-shrink:0">${arcs}
+        <text x="100" y="96" text-anchor="middle" font-size="20" fill="var(--text)" class="num">¥${total.toFixed(0)}</text>
+        <text x="100" y="118" text-anchor="middle" font-size="10" fill="var(--text-dim)">本月支出</text></svg>
+      <div style="flex:1;min-width:160px">${entries.map((e,i) => `
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;padding:4px 0;border-bottom:1px dashed rgba(128,128,128,.18)">
+          <span style="width:9px;height:9px;border-radius:2px;background:${this.PALETTE[i%this.PALETTE.length]};flex-shrink:0"></span>${Util.esc(e[0])}
+          <span style="color:var(--text-dim);font-size:11px">${(e[1]/total*100).toFixed(0)}%</span>
+          <span class="num" style="margin-left:auto">¥${e[1].toFixed(2)}</span></div>`).join('')}</div></div>`;
+  },
+
+  renderList(){
+    const list = Store.list('money', (a,b) => a.date < b.date ? 1 : -1).slice(0, 40);
+    document.getElementById('moneyList').innerHTML = list.length ? list.map(t => `
+      <div class="item">
+        <span class="grow"><b style="font-weight:500">${Util.esc(t.cat)}</b>
+        <span style="color:var(--text-dim);font-size:12px;margin-left:8px">${t.date.slice(5)}${t.note?' · '+Util.esc(t.note):''}</span></span>
+        <span class="num" style="color:${t.type==='out'?'#f47067':'#57ab5a'};flex-shrink:0">${t.type==='out'?'-':'+'}¥${t.amount.toFixed(2)}</span>
+        <button class="del" onclick="Money.del('${t.id}')">✕</button></div>`).join('')
+      : '<div class="empty">还没有记录，记一笔吧</div>';
+  },
+
+  add(){
+    const amt = parseFloat(document.getElementById('moneyAmount').value);
+    if (!amt || amt <= 0){ UI.toast('填一下金额'); return; }
+    Store.upsert('money', {
+      date: document.getElementById('moneyDate').value || Util.today(),
+      type: this.type,
+      cat: document.getElementById('moneyCat').value,
+      amount: amt,
+      note: document.getElementById('moneyNote').value.trim()
+    });
+    document.getElementById('moneyAmount').value = '';
+    document.getElementById('moneyNote').value = '';
+    UI.toast('已记账');
+    this.render();
+  },
+
+  del(id){ Store.softDelete('money', id); this.render(); },
+
+  exportCSV(){
+    const rows = [['日期','类型','分类','金额','备注']].concat(
+      Store.list('money').map(t => [t.date, t.type==='in'?'收入':'支出', t.cat, t.amount, t.note||'']));
+    const csv = '﻿' + rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+    a.download = '黄同学记账.csv'; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+};
+/* ==== 功能：记账 END ==== */
+
+
+/* ==== 功能：读书 START ==== */
+const Read = {
+  NEXT: { '想读':'在读', '在读':'读过', '读过':'想读' },
+  render(){
+    const order = { '在读':0, '想读':1, '读过':2 };
+    const list = Store.list('books').sort((a,b) => (order[a.status]??1)-(order[b.status]??1));
+    document.getElementById('readList').innerHTML = list.length ? list.map(b => `
+      <div style="padding:11px 0;border-bottom:1px dashed rgba(128,128,128,.22)">
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <b style="font-weight:500;font-size:16px;flex:1;min-width:0">${Util.esc(b.title)}</b>
+          <button class="mini" onclick="Read.cycle('${b.id}')" title="点击切换状态">${Util.esc(b.status)}</button>
+          <button class="del" onclick="Read.del('${b.id}')">✕</button>
+        </div>
+        <div class="pbar"><i style="width:${b.pct||0}%"></i></div>
+        <div class="row" style="margin-top:6px">
+          <button class="mini" onclick="Read.bump('${b.id}',-10)">−10%</button>
+          <button class="mini" onclick="Read.bump('${b.id}',10)">+10%</button>
+          <span class="hint" style="margin:0 0 0 auto">已读 <b class="num" style="color:var(--accent)">${b.pct||0}%</b></span>
+        </div>
+        <input type="text" value="${Util.esc(b.note||'')}" placeholder="一句感想…"
+          onchange="Read.note('${b.id}',this.value)"
+          style="border:none;border-bottom:1px solid var(--line);border-radius:0;padding:6px 0;font-size:14px;margin-top:4px">
+      </div>`).join('') : '<div class="empty">还没有书，把在读的放进来</div>';
+  },
+  add(){
+    const t = document.getElementById('readTitle').value.trim();
+    if (!t) return;
+    Store.upsert('books', { title:t, status:document.getElementById('readStatus').value, pct:0, note:'' });
+    document.getElementById('readTitle').value = '';
+    this.render();
+  },
+  cycle(id){
+    const b = Store.list('books').find(x => x.id === id);
+    if (b) Store.upsert('books', { id, status: this.NEXT[b.status] || '在读' });
+    this.render();
+  },
+  bump(id, d){
+    const b = Store.list('books').find(x => x.id === id);
+    if (b) Store.upsert('books', { id, pct: Math.max(0, Math.min(100, (b.pct||0) + d)) });
+    this.render();
+  },
+  note(id, v){ Store.upsert('books', { id, note: v }); },
+  del(id){
+    if (!confirm('删除这本书？')) return;
+    Store.softDelete('books', id);
+    this.render();
+  }
+};
+/* ==== 功能：读书 END ==== */
+
+
+/* ==== 功能：周复盘 START ====
+   汇总本周：解决的问题数 + 农事记录条数 + 学习时长 */
+const Recap = {
+  collect(){
+    const days = [], today = new Date();
+    const dow = (today.getDay() + 6) % 7;
+    for (let i = 0; i < 7; i++){
+      const d = new Date(today); d.setDate(today.getDate() - dow + i);
+      days.push(Util.dateOf(d));
+    }
+    const issues = Store.list('issues');
+    const perDay = days.map(d => issues.filter(x => x.doneDate === d).length +
+      (Store.list('studyTime:' + d).length ? 1 : 0));
+    const done = perDay.reduce((s,n) => s+n, 0);
+    const streak = Store.get('_streak', 0);
+    return { days, perDay, done, streak, from: days[0], to: days[6] };
+  },
+
+  render(){
+    const r = this.collect();
+    const el = document.getElementById('recapBody');
+    if (!el) return;
+    const mins = r.days.reduce((s,d) =>
+      s + Store.list('studyTime:' + d).reduce((a,e) => a + (e.m||0), 0), 0);
+    const farmCount = r.days.reduce((s,d) =>
+      s + Store.list('farm').filter(x => x.date === d).length, 0);
+    el.innerHTML = `
+      <div class="hero num">${r.done}<span class="unit">件事有了进展</span></div>
+      <p class="hint">${r.from} 到 ${r.to} · 农事记录 ${farmCount} 条 · 学习 ${mins} 分钟 · 连续学习 ${r.streak} 天</p>`;
+  },
+
+  async makeCard(){
+    const r = this.collect();
+    const cs = getComputedStyle(document.documentElement);
+    const v = n => cs.getPropertyValue(n).trim();
+    const W = 1080, H = 1350, cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    const g = cv.getContext('2d');
+    const font = (sz, w) => `${w||400} ${sz}px -apple-system,"PingFang SC",system-ui,sans-serif`;
+
+    g.fillStyle = v('--bg') || '#0f1419'; g.fillRect(0,0,W,H);
+    g.fillStyle = v('--card') || '#161b22';
+    const pad = 72, cw = W - pad*2;
+    if (g.roundRect){ g.beginPath(); g.roundRect(pad, 180, cw, 900, 40); g.fill(); }
+    else g.fillRect(pad, 180, cw, 900);
+
+    g.fillStyle = v('--accent') || '#1f6feb';
+    g.font = font(30, 500);
+    g.fillText('这一周', pad + 56, 300);
+
+    g.fillStyle = v('--text') || '#e6edf3';
+    g.font = font(190, 500);
+    g.fillText(String(r.done), pad + 56, 480);
+    g.font = font(38);
+    g.fillStyle = v('--text-dim') || '#7d8590';
+    g.fillText('件事有了进展', pad + 56 + g.measureText(String(r.done)).width + 210, 480);
+
+    g.font = font(34);
+    g.fillText(`${r.from}  —  ${r.to}`, pad + 56, 560);
+
+    const bw = 96, gap = 24, y = 660;
+    for (let i = 0; i < 7; i++){
+      const n = r.perDay[i];
+      g.fillStyle = n ? (v('--accent') || '#1f6feb') : (v('--line') || '#2a323d');
+      g.globalAlpha = n ? Math.min(1, 0.35 + n * 0.18) : 1;
+      const x = pad + 56 + i * (bw + gap);
+      if (g.roundRect){ g.beginPath(); g.roundRect(x, y, bw, bw, 26); g.fill(); }
+      else g.fillRect(x, y, bw, bw);
+      g.globalAlpha = 1;
+      g.fillStyle = v('--text-dim') || '#7d8590';
+      g.font = font(28);
+      g.fillText('一二三四五六日'[i], x + bw/2 - 14, y + bw + 48);
+    }
+
+    g.fillStyle = v('--text') || '#e6edf3';
+    g.font = font(46, 500);
+    g.fillText(`连续学习 ${r.streak} 天`, pad + 56, 900);
+
+    g.fillStyle = v('--text-dim') || '#7d8590';
+    g.font = font(26);
+    g.fillText('黄同学的工作台', pad + 56, 1010);
+    g.font = font(22);
+    g.fillText('由 不一书个人工作台生成器 生成', pad + 56, 1046);
+
+    cv.toBlob(b => {
+      const url = URL.createObjectURL(b);
+      const a = document.createElement('a');
+      a.href = url; a.download = `这一周-${r.to}.png`;
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+        UI.toast('图卡已保存到下载目录');
+      }, 800);
+    }, 'image/png');
+  }
+};
+/* ==== 功能：周复盘 END ==== */
+
+
+App.init();
+</script>
+</body>
+</html>

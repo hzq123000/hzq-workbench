@@ -1,0 +1,19 @@
+{
+  "name": "黄同学的工作台",
+  "short_name": "黄同学",
+  "description": "黄同学的个人工作台：大田项目、农事记录、一建备考与读书",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f1419",
+  "theme_color": "#161b22",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
