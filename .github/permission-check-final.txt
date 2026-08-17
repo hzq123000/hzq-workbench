@@ -1,0 +1,1 @@
+Final MCP end-to-end write permission check - will be deleted
